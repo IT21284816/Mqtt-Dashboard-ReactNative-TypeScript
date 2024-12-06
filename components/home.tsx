@@ -5,8 +5,9 @@ import {
   ScrollView,
   View,
   StyleSheet,
-  Button,
   TouchableOpacity,
+  Alert,
+  Button,
 } from 'react-native';
 import { Client } from 'react-native-paho-mqtt';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,7 +20,6 @@ const Home = ({ navigation }: { navigation: any }) => {
   const [buttonColor, setButtonColor] = useState<string>('#00cc00'); // Green color for "Connect"
 
   useEffect(() => {
-    // Clean up the client when component unmounts
     return () => {
       if (client && client.isConnected()) {
         client.disconnect();
@@ -27,48 +27,54 @@ const Home = ({ navigation }: { navigation: any }) => {
     };
   }, [client]);
 
-  // Connect to MQTT Broker
   const connectMqtt = async () => {
-    const domain = (await AsyncStorage.getItem('brokerDomain')) //|| 'broker.hivemq.com';
-    const port = (await AsyncStorage.getItem('brokerPort')) //|| '8884';
-    const clientId = (await AsyncStorage.getItem('clientId')) //|| `mqtt-client-${Math.random().toString(16).slice(2)}`;
-    const topic = (await AsyncStorage.getItem('topic')) //|| 'test/duhun';
-
-    const brokerUrl = `wss://${domain}:${port}/mqtt`; // Default prefix and suffix
-
-    const mqttClient = new Client({
-      uri: brokerUrl,
-      clientId: clientId,
-      storage: AsyncStorage,
-    });
-
-    mqttClient.on('connectionLost', (responseObject: { errorMessage: string }) => {
-      console.log('Connection lost:', responseObject.errorMessage);
-      setStatus('Disconnected');
-      setButtonText('Connect');
-      setButtonColor('#00cc00'); // Green for Connect button
-    });
-
-    mqttClient.on('messageReceived', (message: { payloadString: string }) => {
-      console.log('Message received:', message.payloadString);
-      setMessages((prevMessages) => [...prevMessages, message.payloadString]);
-    });
-
     try {
+      const domain = (await AsyncStorage.getItem('brokerDomain')) || 'broker.hivemq.com';
+      const port = (await AsyncStorage.getItem('brokerPort')) || '8884';
+      const clientId =
+        (await AsyncStorage.getItem('clientId')) ||
+        `mqtt-client-${Math.random().toString(16).slice(2)}`;
+      const topic = (await AsyncStorage.getItem('topic')) || 'test/duhun';
+  
+      const brokerUrl = `wss://${domain}:${port}/mqtt`;
+  
+      const mqttClient = new Client({
+        uri: brokerUrl,
+        clientId: clientId,
+        storage: AsyncStorage,
+      });
+  
+      mqttClient.on('connectionLost', (responseObject: { errorMessage: string }) => {
+        console.log('Connection lost:', responseObject.errorMessage);
+        setStatus('Disconnected');
+        setButtonText('Connect');
+        setButtonColor('#00cc00'); // Green for Connect button
+        Alert.alert('Connection Lost', responseObject.errorMessage || 'Unknown error');
+      });
+  
+      mqttClient.on('messageReceived', (message: { payloadString: string }) => {
+        console.log('Message received:', message.payloadString);
+        setMessages((prevMessages) => [...prevMessages, message.payloadString]);
+      });
+  
       await mqttClient.connect();
       setStatus('Connected');
       setButtonText('Disconnect');
       setButtonColor('#cc0000'); // Red for Disconnect button
       mqttClient.subscribe(topic);
+      setClient(mqttClient);
     } catch (err) {
-      console.error('Connection failed', err);
+      if (err instanceof Error) {
+        console.error('Connection failed', err.message);
+        Alert.alert('Connection Failed', err.message || 'Unable to connect to the MQTT broker.');
+      } else {
+        console.error('Connection failed', err);
+        Alert.alert('Connection Failed', 'An unknown error occurred.');
+      }
       setStatus('Disconnected');
     }
-
-    setClient(mqttClient);
   };
-
-  // Disconnect from MQTT Broker
+  
   const disconnectMqtt = () => {
     if (client && client.isConnected()) {
       client.disconnect();
@@ -110,7 +116,16 @@ const Home = ({ navigation }: { navigation: any }) => {
           <Text style={styles.buttonText}>{buttonText}</Text>
         </TouchableOpacity>
       </View>
-      <Button title="Settings" onPress={() => navigation.navigate('Settings')} />
+      <TouchableOpacity
+        onPress={() =>
+          navigation.navigate('Settings', {
+            onDisconnect: disconnectMqtt,
+          })
+        }
+        style={styles.settingsButton}
+      >
+        <Text style={styles.settingsButtonText}>Settings</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -157,6 +172,18 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  settingsButton: {
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  settingsButtonText: {
+    color: '#fff',
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 150,
+    paddingVertical:10,
+    borderRadius:5,
+    fontSize: 16,
   },
 });
 

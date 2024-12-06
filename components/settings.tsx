@@ -6,15 +6,19 @@ import {
   Button,
   View,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const Settings = ({ navigation }: { navigation: any }) => {
+const Settings = ({ navigation, route }: { navigation: any; route: any }) => {
   // State variables to hold the input values
-  const [domain, setDomain] = useState<string>(''); // For the broker's domain
+  const [domain, setDomain] = useState<string>(''); // Broker domain
   const [port, setPort] = useState<string>('8884'); // Default port
-  const [clientId, setClientId] = useState<string>(''); 
-  const [topic, setTopic] = useState<string>(''); 
+  const [clientId, setClientId] = useState<string>(''); // Client ID
+  const [topic, setTopic] = useState<string>(''); // Topic
+
+  // Retrieve the disconnect function from route params
+  const { onDisconnect } = route.params || {};
 
   useEffect(() => {
     // Load saved settings from AsyncStorage when the page loads
@@ -24,7 +28,6 @@ const Settings = ({ navigation }: { navigation: any }) => {
       const savedClientId = await AsyncStorage.getItem('clientId');
       const savedTopic = await AsyncStorage.getItem('topic');
 
-      // Set the state with the saved values, or defaults if nothing is saved
       setDomain(savedDomain || 'broker.hivemq.com'); // Default domain
       setPort(savedPort || '8884'); // Default port
       setClientId(savedClientId || `mqtt-client-${Math.random().toString(16).slice(2)}`);
@@ -40,24 +43,35 @@ const Settings = ({ navigation }: { navigation: any }) => {
     await AsyncStorage.setItem('brokerPort', port);
     await AsyncStorage.setItem('clientId', clientId);
     await AsyncStorage.setItem('topic', topic);
-    alert('Settings saved!');
-    navigation.goBack(); // Go back to the home screen
+
+    // Call the disconnect function to ensure MQTT reconnects with updated settings
+    if (onDisconnect) {
+      onDisconnect();
+    }
+
+    Alert.alert('Settings Saved', 'Settings have been updated and MQTT will reconnect with the new configuration.');
+    navigation.goBack(); // Navigate back to the Home screen
   };
 
-  // Reset settings to default values and clear AsyncStorage
+  // Reset settings to default values
   const resetSettings = async () => {
-    setDomain('broker.hivemq.com');  // Default domain
-    setPort('8884');                  // Default port
-    setClientId(`mqtt-client-${Math.random().toString(16).slice(2)}`); // Default client ID
-    setTopic('test/duhun');          // Default topic
+    setDomain('broker.hivemq.com'); // Default domain
+    setPort('8884'); // Default port
+    setClientId(`mqtt-client-${Math.random().toString(16).slice(2)}`); // Default Client ID
+    setTopic('test/duhun'); // Default topic
 
-    // Clear AsyncStorage to remove the saved values
+    // Clear AsyncStorage
     await AsyncStorage.removeItem('brokerDomain');
     await AsyncStorage.removeItem('brokerPort');
     await AsyncStorage.removeItem('clientId');
     await AsyncStorage.removeItem('topic');
 
-    alert('Settings have been reset to default values!');
+    // Call the disconnect function if defined
+    if (onDisconnect) {
+      onDisconnect();
+    }
+
+    Alert.alert('Settings Reset', 'Settings have been reset to their default values.');
   };
 
   return (
@@ -89,9 +103,8 @@ const Settings = ({ navigation }: { navigation: any }) => {
         onChangeText={setTopic}
       />
       <View style={styles.buttonSave}>
-      <Button title="Save" onPress={saveSettings} />
+        <Button title="Save" onPress={saveSettings} />
       </View>
-      {/* Reset button to reset settings */}
       <Button title="Reset to Default" onPress={resetSettings} color="red" />
     </SafeAreaView>
   );
@@ -117,9 +130,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 5,
   },
-  buttonSave:{
-    marginBottom:10,
-  }
+  buttonSave: {
+    marginBottom: 10,
+  },
 });
 
 export default Settings;
