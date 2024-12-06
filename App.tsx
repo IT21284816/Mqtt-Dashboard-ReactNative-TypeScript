@@ -20,7 +20,6 @@ const App = () => {
   const [status, setStatus] = useState<string>('Disconnected');
 
   useEffect(() => {
-    // Initialize MQTT Client
     const mqttClient = new Client({
       uri: MQTT_BROKER,
       clientId: CLIENT_ID,
