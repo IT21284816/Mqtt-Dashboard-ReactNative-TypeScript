@@ -121,6 +121,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginVertical: 20,
+    marginBottom:50,
   },
   input: {
     height: 40,
@@ -131,6 +132,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   buttonSave: {
+    marginTop:20,
     marginBottom: 10,
   },
 });

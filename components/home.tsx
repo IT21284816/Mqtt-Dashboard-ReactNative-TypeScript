@@ -86,7 +86,7 @@ const Home = ({ navigation }: { navigation: any }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>MQTT Home</Text>
+      <Text style={styles.header}>MQTT App</Text>
       <Text
         style={[
           styles.status,
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
     textAlign: 'center',
     marginVertical: 20,
@@ -145,7 +145,10 @@ const styles = StyleSheet.create({
   status: {
     fontSize: 16,
     textAlign: 'center',
-    marginVertical: 5,
+    backgroundColor: 'white',
+    padding:10,
+    borderRadius: 10,
+    marginBottom:20,
   },
   messageContainer: {
     flex: 1,
