@@ -27,7 +27,7 @@ A React Native application that connects to an MQTT broker, displays received me
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-repo/mqtt-react-native-app.git
+   git clone https://github.com/IT21284816/Mqtt-Dashboard-ReactNative-TypeScript.git
    cd mqtt-react-native-app
    ```
 
